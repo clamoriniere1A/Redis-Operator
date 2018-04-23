@@ -1,0 +1,19 @@
+{{- if .Values.broker.activate }}
+kind: Service
+apiVersion: v1
+metadata:
+  name: {{ template "fullname" . }}
+  labels:
+    app: {{ template "fullname" . }}
+    chart: "{{ .Chart.Name }}-{{ .Chart.Version }}"
+    release: "{{ .Release.Name }}"
+    heritage: "{{ .Release.Service }}"
+spec:
+  selector:
+    app: {{ template "fullname" . }}
+    release: "{{ .Release.Name }}"
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: {{ .Values.broker.port }}
+{{- end }}

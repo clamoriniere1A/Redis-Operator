@@ -53,6 +53,7 @@ type Controller struct {
 	podControl                 pod.RedisClusterControlInteface
 	serviceControl             ServicesControlInterface
 	podDisruptionBudgetControl PodDisruptionBudgetsControlInterface
+	roleControl                RoleControlInterface
 
 	updateHandler func(*rapi.RedisCluster) (*rapi.RedisCluster, error) // callback to update RedisCluster. Added as member for testing
 
@@ -113,6 +114,7 @@ func NewController(cfg *Config, kubeClient clientset.Interface, redisClient rcli
 	ctrl.podControl = pod.NewRedisClusterControl(ctrl.podLister, ctrl.kubeClient, ctrl.recorder)
 	ctrl.serviceControl = NewServicesControl(ctrl.kubeClient, ctrl.recorder)
 	ctrl.podDisruptionBudgetControl = NewPodDisruptionBudgetsControl(ctrl.kubeClient, ctrl.recorder)
+	ctrl.roleControl = NewRoleControl(ctrl.kubeClient, ctrl.recorder)
 
 	return ctrl
 }
@@ -275,6 +277,17 @@ func (c *Controller) syncCluster(rediscluster *rapi.RedisCluster) (forceRequeue 
 		if _, err = c.podDisruptionBudgetControl.CreateRedisClusterPodDisruptionBudget(rediscluster); err != nil {
 			glog.Errorf("RedisCluster-Operator.sync unable to create podDisruptionBudget associated to the RedisCluster: %s/%s", rediscluster.Namespace, rediscluster.Name)
 			return forceRequeue, err
+		}
+	}
+
+	securityResourcesExist, err := c.roleControl.IsSecurityRessourcePresent(rediscluster)
+	if err != nil {
+		return false, err
+	}
+	if !securityResourcesExist {
+		if err = c.roleControl.CreateSecurityResources(rediscluster); err != nil {
+			glog.Errorf("RedisCluster-Operator.sync unable to create service account and role associated to the RedisCluster: %s/%s, err:%v", rediscluster.Namespace, rediscluster.Name, err)
+			return false, err
 		}
 	}
 
@@ -451,6 +464,9 @@ func (c *Controller) buildClusterStatus(admin redis.AdminInterface, clusterInfos
 
 	minReplicationFactor := math.MaxInt32
 	maxReplicationFactor := 0
+	if len(nbSlaveByMaster) == 0 {
+		minReplicationFactor = 0
+	}
 	for _, counter := range nbSlaveByMaster {
 		if counter > maxReplicationFactor {
 			maxReplicationFactor = counter

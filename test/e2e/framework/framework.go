@@ -3,12 +3,14 @@ package framework
 import (
 	"fmt"
 
-	"github.com/amadeusitgroup/redis-operator/pkg/client"
-	"github.com/amadeusitgroup/redis-operator/pkg/client/clientset/versioned"
+	scclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
 
+	rclient "github.com/amadeusitgroup/redis-operator/pkg/client/clientset/versioned"
 	clientset "k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+
+	"github.com/amadeusitgroup/redis-operator/pkg/client"
 )
 
 // Framework stores necessary info to run e2e
@@ -40,10 +42,18 @@ func (f *Framework) kubeClient() (clientset.Interface, error) {
 	return clientset.NewForConfig(f.KubeConfig)
 }
 
-func (f *Framework) redisOperatorClient() (versioned.Interface, error) {
+func (f *Framework) redisOperatorClient() (rclient.Interface, error) {
 	c, err := client.NewClient(f.KubeConfig)
 	if err != nil {
 		return nil, fmt.Errorf("unable to create rediscluster client:%v", err)
+	}
+	return c, err
+}
+
+func (f *Framework) serviceCatalogClient() (scclientset.Interface, error) {
+	c, err := scclientset.NewForConfig(f.KubeConfig)
+	if err != nil {
+		return nil, fmt.Errorf("unable to create servicecatalog client:%v", err)
 	}
 	return c, err
 }

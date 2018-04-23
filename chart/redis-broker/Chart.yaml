@@ -1,0 +1,3 @@
+name: redis-broker
+description: a chart for the redis-cluster service broker
+version: 0.0.1

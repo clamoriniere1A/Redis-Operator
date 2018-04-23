@@ -12,6 +12,7 @@ func TestPool(t *T) {
 	size := 10
 	pool, err := New("tcp", "localhost:6379", size)
 	require.Nil(t, err)
+	<-pool.initDoneCh
 
 	var wg sync.WaitGroup
 	for i := 0; i < size*4; i++ {
@@ -58,6 +59,7 @@ func TestCmd(t *T) {
 func TestPut(t *T) {
 	pool, err := New("tcp", "localhost:6379", 10)
 	require.Nil(t, err)
+	<-pool.initDoneCh
 
 	conn, err := pool.Get()
 	require.Nil(t, err)

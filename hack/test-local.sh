@@ -30,10 +30,19 @@ docker tag redisoperator/redisnode:$TAG redisoperator/redisnode:4.0
 echo "create RBAC for rediscluster"
 #kubectl create -f $GIT_ROOT/examples/RedisCluster_RBAC.yaml
 
-printf  "create and install the redis operator in a dedicate namespace"
-until helm install -n operator --set image.tag=$TAG chart/redis-operator; do sleep 1; printf "."; done
+printf  "create and install the service catalog in a dedicate namespace"
+helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
+until helm install --wait svc-cat/catalog  --name catalog --namespace catalog; do sleep 1; printf "."; done
 echo
 
+printf "Waiting for service catalog deployment to complete."
+until [ $(kubectl get deployment catalog-catalog-apiserver -n catalog -ojsonpath="{.status.conditions[?(@.type=='Available')].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done
+until [ $(kubectl get deployment catalog-catalog-controller-manager -n catalog -ojsonpath="{.status.conditions[?(@.type=='Available')].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done
+echo
+
+printf  "create and install the redis operator in a dedicate namespace"
+until helm install --wait -n operator --set image.tag=$TAG --set broker.activate=true chart/redis-operator; do sleep 1; printf "."; done
+echo
 printf "Waiting for redis-operator deployment to complete."
 until [ $(kubectl get deployment operator-redis-operator -ojsonpath="{.status.conditions[?(@.type=='Available')].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done
 echo
@@ -45,8 +54,7 @@ echo "[[[ Cleaning ]]]"
 
 echo "Remove redis-operator helm chart"
 helm del --purge operator
+helm del --purge catalog
 
-kubectl delete ClusterRole redis-operator, redis-node
-kubectl delete ClusterRoleBinding redis-operator, redis-node, redis-node-default
-kubectl delete ServiceAccount redis-operator, redis-node
-kubectl delete crd RedisCluster
+kubectl delete ClusterRole redis-node
+kubectl delete ClusterRoleBinding redis-node-default

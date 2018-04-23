@@ -3,7 +3,7 @@
 GIT_ROOT=$(git rev-parse --show-toplevel)
 export GOPATH=$GIT_ROOT/../../../../
 
-oc cluster up
+oc cluster up --service-catalog
 echo "login to openshift as admin"
 oc login -u system:admin --insecure-skip-tls-verify=true
 oc adm policy --as system:admin add-cluster-role-to-user cluster-admin admin
@@ -34,7 +34,7 @@ echo "create RBAC for rediscluster"
 oc create -f $GIT_ROOT/examples/RedisCluster_RBAC.yaml
 
 printf  "create and install the redis operator in a dedicate namespace"
-until helm install --namespace default -n operator chart/redis-operator; do sleep 1; printf "."; done
+until helm install --namespace default -n operator --set broker.activate=true chart/redis-operator; do sleep 1; printf "."; done
 echo
 
 printf "Waiting for redis-operator deployment to complete."

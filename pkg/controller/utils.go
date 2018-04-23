@@ -7,10 +7,33 @@ import (
 	"time"
 
 	apiv1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 
+	rapi "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
 	"github.com/amadeusitgroup/redis-operator/pkg/config"
 	"github.com/amadeusitgroup/redis-operator/pkg/redis"
 )
+
+func getPodLabelsSet(rediscluster *rapi.RedisCluster) (labels.Set, error) {
+	desiredLabels := labels.Set{}
+	for k, v := range rediscluster.Spec.AdditionalLabels {
+		desiredLabels[k] = v
+	}
+	for k, v := range rediscluster.Spec.PodTemplate.Labels {
+		desiredLabels[k] = v
+	}
+	desiredLabels[rapi.ClusterNameLabelKey] = rediscluster.Name // add rediscluster name to the Pod labels
+	return desiredLabels, nil
+}
+
+// createRedisClusterPodLabelSelector creates label selector to select the jobs related to a rediscluster, stepName
+func createRedisClusterPodLabelSelector(rediscluster *rapi.RedisCluster) (labels.Selector, error) {
+	set, err := getPodLabelsSet(rediscluster)
+	if err != nil {
+		return nil, err
+	}
+	return labels.SelectorFromSet(set), nil
+}
 
 // NewRedisAdmin builds and returns new redis.Admin from the list of pods
 func NewRedisAdmin(pods []*apiv1.Pod, cfg *config.Redis) (redis.AdminInterface, error) {

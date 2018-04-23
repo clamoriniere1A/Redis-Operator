@@ -20,6 +20,12 @@ items:
     resources:
     - pods
     - services
+    - serviceaccounts
+    verbs: ["*"]
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources:
+    - clusterroles
+    - clusterrolebindings
     verbs: ["*"]
   - apiGroups: [""]
     resources:

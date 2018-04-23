@@ -6,11 +6,13 @@ import:
 - package: github.com/onsi/gomega
 - package: github.com/spf13/pflag
 - package: k8s.io/api
+  version: kubernetes-1.9.3
   subpackages:
   - batch/v1
   - batch/v2alpha1
   - core/v1
 - package: k8s.io/apiextensions-apiserver
+  version: kubernetes-1.9.3
   subpackages:
   - pkg/apis/apiextensions/v1beta1
   - pkg/client/clientset/clientset
@@ -35,6 +37,7 @@ import:
   - pkg/util/wait
   - pkg/watch
 - package: k8s.io/client-go
+  version: v6.0.0
   subpackages:
   - kubernetes
   - kubernetes/scheme
@@ -47,7 +50,7 @@ import:
   - tools/reference
   - util/workqueue
 - package: k8s.io/code-generator
-  version: kubernetes-1.9.1
+  version: kubernetes-1.9.3
 - package: k8s.io/gengo
 - package: github.com/mediocregopher/radix.v2
   subpackages:
@@ -56,3 +59,16 @@ import:
 - package: github.com/heptiolabs/healthcheck
 - package: github.com/prometheus/client_golang
   version: ~0.8.0
+- package: github.com/pmorie/go-open-service-broker-client
+  version: v0.0.3
+- package: github.com/pmorie/osb-broker-lib
+  version: v0.0.4
+- package: github.com/kubernetes-incubator/service-catalog
+  version: v0.1.8
+  subpackages:
+  - pkg/client
+- package: golang.org/x/tools/
+  subpackages:
+  - imports
+- package: github.com/satori/go.uuid
+  version: v1.2.0

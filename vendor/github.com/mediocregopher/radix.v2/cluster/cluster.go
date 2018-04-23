@@ -335,7 +335,7 @@ func (c *Cluster) resetInnerUsingPool(p clusterPool) error {
 		}
 		if slotPool, ok = c.pools[slotAddr]; ok {
 			pools[slotAddr] = slotPool
-		} else {
+		} else if _, ok = pools[slotAddr]; !ok {
 			slotPool, err = c.newPool(slotAddr, true)
 			if err != nil {
 				return err
@@ -574,6 +574,21 @@ func (c *Cluster) GetEvery() (map[string]*redis.Client, error) {
 
 	r := <-respCh
 	return r.m, r.err
+}
+
+// GetEveryAvail returns a mapping of every master address to the results of
+// calling Avail on that instance's Pool instance. See pool.Avail for specifics
+// on what Avail means.
+func (c *Cluster) GetEveryAvail() map[string]int {
+	respCh := make(chan map[string]int)
+	c.callCh <- func(c *Cluster) {
+		m := map[string]int{}
+		for addr, p := range c.pools {
+			m[addr] = p.Avail()
+		}
+		respCh <- m
+	}
+	return <-respCh
 }
 
 // GetAddrForKey returns the address which would be used to handle the given key

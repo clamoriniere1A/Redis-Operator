@@ -1,0 +1,47 @@
+kind: Template
+apiVersion: v1
+metadata:
+  labels:
+    app: myapp
+  name: myapp-template
+parameters:
+  - name: REDIS_SECRET_NAME
+    description: "a secret string name corresponding to the redis broker service binding"
+    required: true
+objects:
+  - apiVersion: apps.openshift.io/v1
+    kind: DeploymentConfig
+    metadata:
+      labels:
+        app: myapp
+      name: myapp
+    spec:
+      replicas: 1
+      selector:
+        app: myapp
+        deploymentconfig: myapp
+      template:
+        metadata:
+          labels:
+            app: myapp
+            deploymentconfig: myapp
+        spec:
+          containers:
+            - image: redis:latest
+              name: myapp
+              ports:
+                - containerPort: 6379
+                  protocol: TCP
+              resources: {}
+              volumeMounts:
+                - mountPath: /data
+                  name: data
+              env:
+                - name: REDIS_SVC
+                  valueFrom:
+                    secretKeyRef:
+                        name: ${REDIS_SECRET_NAME}
+                        key: service-name
+          volumes:
+            - emptyDir: {}
+              name: data

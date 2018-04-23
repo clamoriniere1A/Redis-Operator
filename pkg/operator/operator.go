@@ -8,6 +8,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/heptiolabs/healthcheck"
+	prom "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
 	apiextensionsclient "k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
@@ -18,6 +20,7 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/clientcmd"
 
+	broker "github.com/amadeusitgroup/redis-operator/pkg/broker/server"
 	rclient "github.com/amadeusitgroup/redis-operator/pkg/client"
 	redisinformers "github.com/amadeusitgroup/redis-operator/pkg/client/informers/externalversions"
 	"github.com/amadeusitgroup/redis-operator/pkg/controller"
@@ -29,8 +32,10 @@ type RedisOperator struct {
 	kubeInformerFactory  kubeinformers.SharedInformerFactory
 	redisInformerFactory redisinformers.SharedInformerFactory
 
-	controller *controller.Controller
-	GC         garbagecollector.Interface
+	controller   *controller.Controller
+	GC           garbagecollector.Interface
+	broker       *broker.Broker
+	promRegistry *prom.Registry
 
 	// Kubernetes Probes handler
 	health healthcheck.Handler
@@ -69,22 +74,46 @@ func NewRedisOperator(cfg *Config) *RedisOperator {
 	kubeInformerFactory := kubeinformers.NewSharedInformerFactory(kubeClient, time.Second*30)
 	redisInformerFactory := redisinformers.NewSharedInformerFactory(redisClient, time.Second*30)
 
+	// Prom. metrics
+	reg := prom.NewRegistry()
+
 	op := &RedisOperator{
 		kubeInformerFactory:  kubeInformerFactory,
 		redisInformerFactory: redisInformerFactory,
 		controller:           controller.NewController(controller.NewConfig(1, cfg.Redis), kubeClient, redisClient, kubeInformerFactory, redisInformerFactory),
 		GC:                   garbagecollector.NewGarbageCollector(redisClient, kubeClient, redisInformerFactory),
+		promRegistry:         reg,
 	}
 
 	op.configureHealth()
 	op.httpServer = &http.Server{Addr: cfg.ListenAddr, Handler: op.health}
 
+	// broker setup
+	if cfg.ActivateBroker {
+		op.broker, err = initBroker(cfg, op.promRegistry)
+		if err != nil {
+			glog.Fatalf("Unable to initialize redis-broker:%v", err)
+		}
+	}
 	return op
+}
+
+func initBroker(cfg *Config, registry *prom.Registry) (*broker.Broker, error) {
+	cfg.Broker.Rediscluster.KubeConfigFile = cfg.KubeConfigFile
+	cfg.Broker.Rediscluster.Master = cfg.Master
+	cfg.Broker.Rediscluster.Namespace = cfg.Namespace
+	cfg.Broker.PromRegistry = registry
+	return broker.NewBroker(&cfg.Broker)
 }
 
 // Run executes the Redis Operator
 func (op *RedisOperator) Run(stop <-chan struct{}) error {
 	var err error
+	if op.broker != nil {
+		ctx, cancelBroker := context.WithCancel(context.Background())
+		defer cancelBroker()
+		go op.broker.Run(ctx)
+	}
 	if op.controller != nil {
 		op.kubeInformerFactory.Start(stop)
 		op.redisInformerFactory.Start(stop)
@@ -148,6 +177,8 @@ func (op *RedisOperator) configureHealth() {
 }
 
 func (op *RedisOperator) runHTTPServer(stop <-chan struct{}) error {
+	// register prometheus metrics
+	http.Handle("/metrics", promhttp.HandlerFor(op.promRegistry, promhttp.HandlerOpts{}))
 
 	go func() {
 		glog.Info("Listening on http://%s\n", op.httpServer.Addr)

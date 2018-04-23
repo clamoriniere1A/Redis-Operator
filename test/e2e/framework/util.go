@@ -20,6 +20,11 @@ func Logf(format string, args ...interface{}) {
 	log("INFO", format, args...)
 }
 
+// Warningf logs warning in e2e framework
+func Warningf(format string, args ...interface{}) {
+	log("WARN", format, args...)
+}
+
 // Failf reports a failure in the current e2e
 func Failf(format string, args ...interface{}) {
 	msg := fmt.Sprintf(format, args...)

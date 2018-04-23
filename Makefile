@@ -7,7 +7,7 @@ PREFIX=redisoperator/
 
 SOURCES := $(shell find $(SOURCEDIR) ! -name "*_test.go" -name '*.go')
 
-CMDBINS := operator redisnode
+CMDBINS := operator redisnode servicebroker
 
 TAG?=$(shell git tag|tail -1)
 COMMIT=$(shell git rev-parse HEAD)

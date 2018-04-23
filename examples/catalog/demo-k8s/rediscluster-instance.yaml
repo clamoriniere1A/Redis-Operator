@@ -1,0 +1,15 @@
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceInstance
+metadata:
+  name: redis-cluster-instance
+spec:
+  clusterServiceClassExternalName: redis-broker-service
+  clusterServicePlanExternalName: default
+  parameters:
+    cluster-name: rcs-app
+    number-of-masters: 3
+    replication-factor: 1
+    memory-by-node: 50
+    proxy: true
+    monitoring: prometheus
+    requirepass: "" 
