@@ -28,6 +28,7 @@ type propertie struct {
 	Type      string        `json:"type"`
 	Default   interface{}   `json:"default,omitempty"`
 	MaxLength uint32        `json:"maxLength,omitempty"`
+	MinLength uint32        `json:"minLength,omitempty"`
 	Enum      []interface{} `json:"enum,omitempty"`
 }
 
@@ -45,4 +46,6 @@ const (
 	provisioningParameterKey      parameterKey = "provisioning"
 	numberOfMasterParameterKey    parameterKey = "number-of-masters"
 	replicationFactorParameterKey parameterKey = "replication-factor"
+	memoryByNodeParameterKey      parameterKey = "memory-node"
+	cpuByNodeParameterKey         parameterKey = "cpu-node"
 )

@@ -129,6 +129,7 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 	clusterName := request.InstanceID
 	nbMaster := int32(3)
 	replica := int32(1)
+	nodeResourceConf := ClusterNodeResourcesConf{}
 	provisioning := provisioningSelfHosted
 	userNs := ""
 	if request.Context != nil {
@@ -145,6 +146,10 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 				nbMaster = int32(val.(float64))
 			case replicationFactorParameterKey:
 				replica = int32(val.(float64))
+			case memoryByNodeParameterKey:
+				nodeResourceConf.MemoryRequest = val.(string)
+			case cpuByNodeParameterKey:
+				nodeResourceConf.CPURequest = val.(string)
 			case provisioningParameterKey:
 				provisioning = provisioningType(val.(string))
 			default:
@@ -166,7 +171,10 @@ func (b *BusinessLogic) Provision(request *osb.ProvisionRequest, c *broker.Reque
 		return nil, fmt.Errorf("redis-cluster %s/%s already exist", namespace, clusterName)
 	}
 
-	newCluster := NewRedisCluster(clusterName, namespace, request.InstanceID, "latest", nbMaster, replica)
+	newCluster, err := NewRedisCluster(clusterName, namespace, request.InstanceID, "latest", nbMaster, replica, nodeResourceConf)
+	if err != nil {
+		return nil, err
+	}
 	_, err = b.redisClient.RedisoperatorV1().RedisClusters(namespace).Create(newCluster)
 	if err != nil {
 		return nil, err

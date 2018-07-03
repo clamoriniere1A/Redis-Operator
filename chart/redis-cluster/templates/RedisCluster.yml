@@ -36,7 +36,7 @@ spec:
             "--d=10s", 
             "--ns=$(POD_NAMESPACE)",
 {{- if .Values.resources }}
-             "--max-memory=$(MEMORY_REQUEST)",
+            "--max-memory=$(MEMORY_REQUEST)",
 {{- end }}
 {{- if .Values.maxMemoryPolicy }}
              "--max-memory-policy={{ .Values.maxMemoryPolicy }}",

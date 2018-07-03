@@ -29,7 +29,25 @@ func GenerateBrokerService() *v2.Service {
 								"$schema":    "http://json-schema.org/draft-04/schema",
 								"type":       "object",
 								"title":      "Parameters",
-								"properties": getProperties(),
+								"properties": getPropertiesForStaticConf(),
+							},
+						},
+					},
+				},
+			},
+			{
+				Name:        "auto-scale",
+				ID:          "redis-cluster-autoscale-plan",
+				Description: "`Redis-Cluster scale up and down is done automaticaly by the redis-operator thanks to prometheus metrics",
+				Free:        &boolTrue,
+				ParameterSchemas: &v2.ParameterSchemas{
+					ServiceInstances: &v2.ServiceInstanceSchema{
+						Create: &v2.InputParameters{
+							Parameters: map[string]interface{}{
+								"$schema":    "http://json-schema.org/draft-04/schema",
+								"type":       "object",
+								"title":      "Parameters",
+								"properties": getDefaultProperties(),
 							},
 						},
 					},
@@ -39,7 +57,24 @@ func GenerateBrokerService() *v2.Service {
 	}
 }
 
-func getProperties() properties {
+func getPropertiesForStaticConf() properties {
+	props := getDefaultProperties()
+
+	props[numberOfMasterParameterKey] = propertie{
+		Title:   "Number of masters",
+		Type:    "integer",
+		Default: 3,
+	}
+	props[replicationFactorParameterKey] = propertie{
+		Title:   "Replication Factor",
+		Type:    "integer",
+		Default: 1,
+	}
+
+	return props
+}
+
+func getDefaultProperties() properties {
 	props := properties{
 		clusterNameParameterKey: propertie{
 			Title:     "Redis cluster name",
@@ -53,15 +88,19 @@ func getProperties() properties {
 			Default: "self-hosted",
 			Enum:    []interface{}{provisioningSelfHosted, provisioningUserNamespace},
 		},
-		numberOfMasterParameterKey: propertie{
-			Title:   "Number of masters",
-			Type:    "integer",
-			Default: 3,
+		memoryByNodeParameterKey: propertie{
+			Title:     "Memory by Redis Node",
+			Type:      "string",
+			MaxLength: 10,
+			MinLength: 0,
+			Default:   "1Gi",
 		},
-		replicationFactorParameterKey: propertie{
-			Title:   "Replication Factor",
-			Type:    "integer",
-			Default: 1,
+		cpuByNodeParameterKey: propertie{
+			Title:     "CPU by Redis Node",
+			Type:      "string",
+			MaxLength: 10,
+			MinLength: 0,
+			Default:   "1",
 		},
 	}
 
