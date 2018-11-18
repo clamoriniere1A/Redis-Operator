@@ -26,15 +26,6 @@ func getPodLabelsSet(rediscluster *rapi.RedisCluster) (labels.Set, error) {
 	return desiredLabels, nil
 }
 
-// createRedisClusterPodLabelSelector creates label selector to select the jobs related to a rediscluster, stepName
-func createRedisClusterPodLabelSelector(rediscluster *rapi.RedisCluster) (labels.Selector, error) {
-	set, err := getPodLabelsSet(rediscluster)
-	if err != nil {
-		return nil, err
-	}
-	return labels.SelectorFromSet(set), nil
-}
-
 // NewRedisAdmin builds and returns new redis.Admin from the list of pods
 func NewRedisAdmin(pods []*apiv1.Pod, cfg *config.Redis) (redis.AdminInterface, error) {
 	nodesAddrs := []string{}

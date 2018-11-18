@@ -32,9 +32,9 @@ helm init --wait --service-account tiller
 
 # Install Service Catalog
 helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
-until helm install --wait svc-cat/catalog  --name catalog --namespace catalog; do sleep 1; printf "."; done; echo
-until [ $(kubectl get deployment catalog-catalog-apiserver -n catalog -ojsonpath="{.status.conditions[?(@.type=='Available')].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done
-until [ $(kubectl get deployment catalog-catalog-controller-manager -n catalog -ojsonpath="{.status.conditions[?(@.type=='Available')].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done; echo
+until helm install --wait svc-cat/catalog --version 0.1.9 --name catalog --namespace catalog; do sleep 1; printf "."; done; echo
+until [ $($ctl get deployment catalog-catalog-apiserver -n catalog -ojsonpath="{.status.conditions[?(@.type=='Available')].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done
+until [ $($ctl get deployment catalog-catalog-controller-manager -n catalog -ojsonpath="{.status.conditions[?(@.type=='Available')].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done; echo
 
 make -C $ROOT build
 make -C $ROOT test

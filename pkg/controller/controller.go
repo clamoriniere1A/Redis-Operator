@@ -304,7 +304,7 @@ func (c *Controller) syncCluster(rediscluster *rapi.RedisCluster) (forceRequeue 
 	Pods, LostPods := filterLostNodes(redisClusterPods)
 	if len(LostPods) != 0 {
 		for _, p := range LostPods {
-			err := c.podControl.DeletePodNow(rediscluster, p.Name)
+			err = c.podControl.DeletePodNow(rediscluster, p.Name)
 			glog.Errorf("Lost node with pod %s. Deleting... %v", p.Name, err)
 		}
 		redisClusterPods = Pods

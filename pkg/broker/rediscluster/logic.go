@@ -297,7 +297,7 @@ func (b *BusinessLogic) LastOperation(request *osb.LastOperationRequest, c *brok
 // https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md#binding
 func (b *BusinessLogic) Bind(request *osb.BindRequest, c *broker.RequestContext) (*osb.BindResponse, error) {
 	// Your bind business logic goes here
-	glog.Info("BIND rq:%#v", request)
+	glog.Infof("BIND rq:%#v", request)
 
 	cluster, err := b.getCluster(request.InstanceID)
 	if err != nil {

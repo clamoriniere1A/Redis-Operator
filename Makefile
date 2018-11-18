@@ -68,12 +68,12 @@ fmt:
 
 # Run all the linters
 lint:
-	gometalinter --vendor ./... -e pkg/client -e _generated -e test --deadline 15m -D gocyclo -D errcheck -D aligncheck -D maligned -D gas
+	gometalinter --vendor ./... -e pkg/client -e _generated -e test -e hack --deadline 15m -D gocyclo -D errcheck -D aligncheck -D maligned -D gosec
 .PHONY: lint
 
 # Run only fast linters
 lint-fast:
-	gometalinter --fast --vendor ./... -e pkg/client -e _generated -e test --deadline 9m -D gocyclo -D errcheck -D aligncheck -D maligned
+	gometalinter --fast --vendor ./... -e pkg/client -e _generated -e test -e hack --deadline 9m -D gocyclo -D errcheck -D aligncheck -D maligned -D gosec
 .PHONY: lint-fast
 
 
