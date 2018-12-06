@@ -27,9 +27,6 @@ make TAG=$TAG container
 # tag the same image for rolling-update test
 docker tag redisoperator/redisnode:$TAG redisoperator/redisnode:4.0
 
-echo "create RBAC for rediscluster"
-#kubectl create -f $GIT_ROOT/examples/RedisCluster_RBAC.yaml
-
 printf  "create and install the service catalog in a dedicate namespace"
 helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
 until helm install --wait svc-cat/catalog  --name catalog --namespace catalog; do sleep 1; printf "."; done
@@ -55,6 +52,3 @@ echo "[[[ Cleaning ]]]"
 echo "Remove redis-operator helm chart"
 helm del --purge operator
 helm del --purge catalog
-
-kubectl delete ClusterRole redis-node
-kubectl delete ClusterRoleBinding redis-node-default

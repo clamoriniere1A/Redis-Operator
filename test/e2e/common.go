@@ -2,6 +2,7 @@ package e2e
 
 import (
 	api "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clientset "k8s.io/client-go/kubernetes"
 
 	scclientset "github.com/kubernetes-incubator/service-catalog/pkg/client/clientset_generated/clientset"
@@ -31,3 +32,9 @@ var _ = AfterSuite(func() {
 	deleteRedisCluster(redisClient, rediscluster)
 	deleteRedisClusterServiceInstance(serviceInstanceName)
 })
+
+func deleteRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCluster) {
+	if rediscluster != nil {
+		client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Delete(rediscluster.Name, &metav1.DeleteOptions{})
+	}
+}

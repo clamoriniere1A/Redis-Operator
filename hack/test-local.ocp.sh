@@ -3,38 +3,37 @@
 GIT_ROOT=$(git rev-parse --show-toplevel)
 export GOPATH=$GIT_ROOT/../../../../
 
-oc cluster up --service-catalog
+oc cluster up --version v3.9 #--service-catalog
 echo "login to openshift as admin"
 oc login -u system:admin --insecure-skip-tls-verify=true
 oc adm policy --as system:admin add-cluster-role-to-user cluster-admin admin
 
 echo "create the helm tiller"
-oc new-project tiller
-export TILLER_NAMESPACE=tiller
-oc project tiller
-oc process -f ${GIT_ROOT}/hack/oc-tiller-template.yaml -p TILLER_NAMESPACE="${TILLER_NAMESPACE}" | oc create -f -
-oc policy add-role-to-user edit "system:serviceaccount:${TILLER_NAMESPACE}:tiller"
-oc create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount="$TILLER_NAMESPACE":tiller
-helm init --client-only
+oc -n kube-system create sa tiller
+oc create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
+helm init --wait --service-account tiller
 
-# -----
-printf "Waiting for tiller deployment to complete."
-until [ $(oc get deployment -n tiller tiller -ojsonpath="{.status.conditions[?(@.type==\"Available\")].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done
-echo
+
+# Install Service Catalog
+oc new-project catalog
+helm repo add svc-cat https://svc-catalog-charts.storage.googleapis.com
+until helm install --wait svc-cat/catalog --version 0.1.9 --name catalog --namespace catalog; do sleep 1; printf "."; done; echo
+until [ $($ctl get deployment catalog-catalog-apiserver -n catalog -ojsonpath="{.status.conditions[?(@.type=='Available')].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done
+until [ $($ctl get deployment catalog-catalog-controller-manager -n catalog -ojsonpath="{.status.conditions[?(@.type=='Available')].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done; echo
+
 
 echo "Install the redis-cluster operator"
 oc project default
-oc create clusterrolebinding redis-operators --clusterrole=cluster-admin --serviceaccount=default:redis-operator
 echo "First build the container"
 make TAG=latest container
 # tag the same image for rolling-update test
 docker tag redisoperator/redisnode:latest redisoperator/redisnode:4.0
 
 echo "create RBAC for rediscluster"
-oc create -f $GIT_ROOT/examples/RedisCluster_RBAC.yaml
+#oc create -f $GIT_ROOT/examples/RedisCluster_RBAC.yaml
 
 printf  "create and install the redis operator in a dedicate namespace"
-until helm install --namespace default -n operator --set broker.activate=true chart/redis-operator; do sleep 1; printf "."; done
+helm install --wait --namespace default -n operator --set broker.activate=true --set image.tag=latest chart/redis-operator
 echo
 
 printf "Waiting for redis-operator deployment to complete."
@@ -50,8 +49,5 @@ echo "wait the garbage collection"
 sleep 20 
 echo "Remove redis-operator helm chart"
 helm del --purge operator
-
-oc delete ClusterRole redis-operator, redis-node
-oc delete ServiceAccount redis-operator, redis-node
 
 oc cluster down

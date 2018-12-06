@@ -286,9 +286,9 @@ func HOCreateRedisNodeServiceAccount(client clientset.Interface, rediscluster *r
 			}
 		}
 
-		_, err = client.RbacV1().ClusterRoles().Get("redis-node", metav1.GetOptions{})
+		_, err = client.RbacV1().Roles(rediscluster.Namespace).Get("redis-node", metav1.GetOptions{})
 		if err != nil && errors.IsNotFound(err) {
-			cr := rbacv1.ClusterRole{
+			cr := rbacv1.Role{
 				ObjectMeta: metav1.ObjectMeta{
 					Name: "redis-node",
 				},
@@ -300,7 +300,7 @@ func HOCreateRedisNodeServiceAccount(client clientset.Interface, rediscluster *r
 					},
 				},
 			}
-			_, err = client.Rbac().ClusterRoles().Create(&cr)
+			_, err = client.Rbac().Roles(rediscluster.Namespace).Create(&cr)
 			if err != nil {
 				return err
 			}
@@ -313,7 +313,7 @@ func HOCreateRedisNodeServiceAccount(client clientset.Interface, rediscluster *r
 				},
 				RoleRef: rbacv1.RoleRef{
 					APIGroup: "rbac.authorization.k8s.io",
-					Kind:     "ClusterRole",
+					Kind:     "Role",
 					Name:     "redis-node",
 				},
 				Subjects: []rbacv1.Subject{

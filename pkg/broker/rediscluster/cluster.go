@@ -45,6 +45,7 @@ func NewRedisCluster(name, namespace, instanceID, tag string, nbMaster, replicat
 					ServiceAccountName: "redis-node",
 					Volumes: []v1.Volume{
 						{Name: "data"},
+						{Name: "conf"},
 					},
 					Containers: []v1.Container{
 						{
@@ -53,6 +54,7 @@ func NewRedisCluster(name, namespace, instanceID, tag string, nbMaster, replicat
 							ImagePullPolicy: v1.PullIfNotPresent,
 							Args: []string{
 								"--v=6",
+								"--c=/redis-conf/redis.conf",
 								"--logtostderr=true",
 								"--alsologtostderr=true",
 								fmt.Sprintf("--rs=%s-service", name),
@@ -67,6 +69,7 @@ func NewRedisCluster(name, namespace, instanceID, tag string, nbMaster, replicat
 							},
 							VolumeMounts: []v1.VolumeMount{
 								{Name: "data", MountPath: "/redis-data"},
+								{Name: "conf", MountPath: "/redis-conf"},
 							},
 							Env: []v1.EnvVar{
 								{Name: "POD_NAMESPACE", ValueFrom: &v1.EnvVarSource{FieldRef: &v1.ObjectFieldSelector{FieldPath: "metadata.namespace"}}},

@@ -39,21 +39,22 @@ until [ $($ctl get deployment catalog-catalog-controller-manager -n catalog -ojs
 make -C $ROOT build
 make -C $ROOT test
 make -C $ROOT TAG=$TAG container
-make -C $ROOT TAG=4.0 container
+docker tag redisoperator/redisnode:$TAG redisoperator/redisnode:4.0
+docker tag redisoperator/redisnode:$TAG redisoperator/redisnode:latest
 docker images
-helm install --wait --version $TAG -n end2end-test --set image.pullPolicy=IfNotPresent --set image.tag=$TAG chart/redis-operator
-while [ $($ctl get pod --selector=app=redis-operator --all-namespaces | grep 'redis-operator' | awk '{print $4}') != "Running" ]
-do
-   echo "$($ctl get pod --selector=app=redis-operator --all-namespaces)"
-   sleep 5
-done
 
-$ctl logs -f $($ctl get pod -l app=redis-operator --output=jsonpath={.items[0].metadata.name}) > /tmp/tmp.operator.logs &
+helm install --wait --version $TAG -n end2end-test --set broker.activate=true --set image.pullPolicy=IfNotPresent --set image.tag=$TAG chart/redis-operator
+printf "Waiting for redis-operator deployment to complete."
+until [ $($ctl get deployment end2end-test-redis-operator -ojsonpath="{.status.conditions[?(@.type==\"Available\")].status}") == "True" ] > /dev/null 2>&1; do sleep 1; printf "."; done
+echo
+
+$ctl logs -f $($ctl get pod --selector=app=end2end-test-redis-operator -n default --output=jsonpath={.items[0].metadata.name}) > /tmp/tmp.operator.logs &
+
+$ctl get pods --all-namespaces
 
 cd ./test/e2e
 EXIT_CODE=0
 go test -c && ./e2e.test --kubeconfig=$HOME/.kube/config --image-tag=$TAG --ginkgo.slowSpecThreshold 350 || EXIT_CODE=$? && true ;
-echo $EXIT_CODE
 helm delete end2end-test
 cat /tmp/tmp.operator.logs
 exit $EXIT_CODE

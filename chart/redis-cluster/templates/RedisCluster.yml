@@ -28,7 +28,6 @@ spec:
         - name: redis-node
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           args: ["--v={{ .Values.log.level }}", 
-            "--c=/redis-conf/redis.conf",
             "--logtostderr=true", 
             "--alsologtostderr=true",
             "--rs={{ template "service-name" . }}", 

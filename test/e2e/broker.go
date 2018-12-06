@@ -50,13 +50,13 @@ var _ = Describe("Redis broker", func() {
 
 			Eventually(framework.HOIsServiceInstanceCreated(serviceCatalogClient, clusterNs, serviceIntance, true), "30s", "5s").ShouldNot(HaveOccurred())
 
-			Eventually(framework.HOIsServiceInstanceSucceed(serviceCatalogClient, clusterNs, serviceIntance, true), "30s", "5s").ShouldNot(HaveOccurred())
+			Eventually(framework.HOIsServiceInstanceSucceed(serviceCatalogClient, clusterNs, serviceIntance, true), "5m", "5s").ShouldNot(HaveOccurred())
 
 			serviceBinding := framework.NewRedisClusterServiceBinding(serviceBindingName, clusterNs, serviceInstanceName)
 			framework.Logf("serviceBinding created localy")
 			Eventually(framework.HOCreateServiceBinding(serviceCatalogClient, clusterNs, serviceBinding), "5s", "1s").ShouldNot(HaveOccurred())
 			framework.Logf("serviceBinding created in kube api server")
-			Eventually(framework.HOIsServiceBindingCreated(serviceCatalogClient, clusterNs, serviceBinding), "2m", "5s").ShouldNot(HaveOccurred())
+			Eventually(framework.HOIsServiceBindingCreated(serviceCatalogClient, clusterNs, serviceBinding), "5m", "5s").ShouldNot(HaveOccurred())
 			framework.Logf("serviceBinding created checked ok")
 		})
 	})

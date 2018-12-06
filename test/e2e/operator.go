@@ -1,23 +1,14 @@
 package e2e
 
 import (
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	// for test lisibility
 	. "github.com/onsi/ginkgo"
 	// for test lisibility
 	. "github.com/onsi/gomega"
 
-	rapi "github.com/amadeusitgroup/redis-operator/pkg/api/redis/v1"
-	"github.com/amadeusitgroup/redis-operator/pkg/client/clientset/versioned"
 	"github.com/amadeusitgroup/redis-operator/test/e2e/framework"
 )
-
-func deleteRedisCluster(client versioned.Interface, rediscluster *rapi.RedisCluster) {
-	if rediscluster != nil {
-		client.RedisoperatorV1().RedisClusters(rediscluster.Namespace).Delete(rediscluster.Name, &metav1.DeleteOptions{})
-	}
-}
 
 var _ = Describe("RedisCluster Operator", func() {
 
@@ -70,11 +61,15 @@ var _ = Describe("RedisCluster Operator", func() {
 
 				Eventually(framework.HOUpdateRedisCluster(redisClient, rediscluster, clusterNs), "5s", "1s").ShouldNot(HaveOccurred())
 
-				Eventually(framework.HOIsPodSpecUpdated(kubeClient, rediscluster, newTag), "3m", "5s").ShouldNot(HaveOccurred())
+				Eventually(framework.HOIsPodSpecUpdated(kubeClient, rediscluster, newTag), "5m", "5s").ShouldNot(HaveOccurred())
 
-				Eventually(framework.HOIsRedisClusterStarted(redisClient, rediscluster, clusterNs), "3m", "5s").ShouldNot(HaveOccurred())
+				Eventually(framework.HOIsRedisClusterStarted(redisClient, rediscluster, clusterNs), "4m", "5s").ShouldNot(HaveOccurred())
 			})
 		})
+	})
+
+	AfterEach(func() {
+		deleteRedisCluster(redisClient, redisclusterBroker)
 	})
 
 })

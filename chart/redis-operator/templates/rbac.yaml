@@ -24,8 +24,8 @@ items:
     verbs: ["*"]
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources:
-    - clusterroles
-    - clusterrolebindings
+    - roles
+    - rolebindings
     verbs: ["*"]
   - apiGroups: [""]
     resources:
@@ -47,4 +47,33 @@ items:
   - kind: ServiceAccount
     name: {{ .Values.serviceAccount }}
     namespace: {{ .Release.Namespace }}
+{{- if .Values.broker.activate }}
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: "redis-node"
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: Role
+  metadata:
+    name: redis-node
+  rules:
+  - apiGroups: [""]
+    resources:
+    - services
+    - endpoints
+    - pods
+    verbs: ["list", "get"]
+- apiVersion: rbac.authorization.k8s.io/v1beta1
+  kind: RoleBinding
+  metadata:
+    name: redis-node
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: redis-node
+  subjects:
+  - kind: ServiceAccount
+    name: redis-node
+    namespace: {{ .Release.Namespace }}
+{{ end }}
 {{ end }}
